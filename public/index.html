@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Radar &mdash; Visibilidad en ChatGPT</title>
+<script src="chart.umd.js"></script>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span class="brand-name">RADAR</span>
+      </div>
+      <p class="brand-sub">Visibilidad en ChatGPT</p>
+
+      <div class="project-list" id="projectList"></div>
+
+      <form id="newProjectForm" class="new-project-form">
+        <input type="text" id="newProjectName" placeholder="Nombre del proyecto" required />
+        <input type="text" id="newProjectDomain" placeholder="dominio.com" required />
+        <select id="newProjectFrequency">
+          <option value="1">Revisar cada día</option>
+          <option value="3">Revisar cada 3 días</option>
+          <option value="7">Revisar cada semana</option>
+        </select>
+        <button type="submit">+ Agregar proyecto</button>
+      </form>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="projectTitle">Selecciona un proyecto</h1>
+          <p id="projectDomain" class="muted mono"></p>
+          <div id="frequencyControl" class="frequency-control" hidden>
+            <span class="muted">Frecuencia:</span>
+            <select id="projectFrequency">
+              <option value="1">Cada día</option>
+              <option value="3">Cada 3 días</option>
+              <option value="7">Cada semana</option>
+            </select>
+            <button id="saveFrequencyBtn" type="button">Guardar</button>
+            <span id="frequencySaved" class="muted" style="display:none;">✓ Guardado</span>
+          </div>
+          <p id="frequencyLegend" class="muted frequency-legend" hidden></p>
+        </div>
+        <button id="checkAllBtn" class="btn-primary">Revisar ahora</button>
+      </header>
+
+      <section class="panel" id="keywordsPanel" hidden>
+        <div class="panel-header">
+          <h2>Términos monitoreados</h2>
+        </div>
+
+        <form id="newKeywordForm" class="new-keyword-form">
+          <input type="text" id="newKeywordTerm" placeholder="ej. donde realizarme la manga gastrica en lima" required />
+          <select id="newKeywordCity"></select>
+          <select id="newKeywordCountry"></select>
+          <input type="text" id="newKeywordTags" placeholder="Etiquetas separadas por coma, ej. productos, competencia" />
+          <button type="submit">+ Agregar término</button>
+        </form>
+        <div id="newKeywordTagsPicker" class="tag-picker"></div>
+
+        <button type="button" id="toggleBulkBtn" class="bulk-toggle">+ Agregar varios términos de una vez</button>
+
+        <div id="bulkForm" class="bulk-form" hidden>
+          <p class="muted">Un término por línea. Todos van a compartir la misma ciudad, país y etiquetas.</p>
+          <textarea id="bulkTerms" rows="6" placeholder="donde venden rodamientos en lima&#10;donde comprar acoples en arequipa&#10;mejor proveedor de rodamientos peru"></textarea>
+          <div class="bulk-form-row">
+            <select id="bulkCity"></select>
+            <select id="bulkCountry"></select>
+            <input type="text" id="bulkTags" placeholder="Etiquetas separadas por coma (opcional)" />
+          </div>
+          <div id="bulkTagsPicker" class="tag-picker"></div>
+          <button type="button" id="bulkSubmitBtn" class="btn-primary">Agregar todos</button>
+        </div>
+
+        <div class="tag-filter">
+          <span class="muted">Filtrar por etiqueta:</span>
+          <select id="tagFilterSelect">
+            <option value="">Todas</option>
+          </select>
+          <span class="muted">Ubicación:</span>
+          <select id="locationFilterSelect">
+            <option value="">Todas</option>
+          </select>
+        </div>
+
+        <table class="kw-table">
+          <thead>
+            <tr><th>Término</th><th>Etiquetas</th><th>Ubicación</th><th>Estado actual</th><th>Última revisión</th><th></th></tr>
+          </thead>
+          <tbody id="keywordsBody"></tbody>
+        </table>
+      </section>
+
+      <section class="charts-section" id="chartsSection" hidden>
+        <button type="button" id="toggleChartsBtn" class="charts-toggle">
+          <span>Gráficas y reportes</span>
+          <span id="chartsToggleIcon" class="charts-toggle-icon">▾</span>
+        </button>
+
+        <div id="chartsContainer">
+          <div class="panel" id="chartPanel">
+            <h2>Índice de visibilidad</h2>
+            <p class="muted">% de términos donde tu dominio aparece citado por ChatGPT, por día</p>
+            <canvas id="visibilityChart" height="90"></canvas>
+          </div>
+
+          <div class="panel" id="monthlyBarPanel">
+            <h2>Comparativa mensual</h2>
+            <p class="muted">Cantidad de términos con visibilidad (aparecen citados), mes contra mes</p>
+            <canvas id="monthlyBarChart" height="90"></canvas>
+          </div>
+
+          <div class="panel" id="growthPanel">
+            <h2>Curva de crecimiento</h2>
+            <p class="muted">Tendencia de términos con visibilidad a lo largo del tiempo</p>
+            <canvas id="growthChart" height="90"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="empty-state" id="emptyState">
+        <p>Crea tu primer proyecto en el panel izquierdo para empezar a trackear.</p>
+      </section>
+    </main>
+  </div>
+
+  <div id="detailModal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <button type="button" id="closeModalBtn" class="modal-close">✕</button>
+      <h2 id="modalTerm" class="modal-title"></h2>
+      <div class="modal-meta">
+        <span id="modalStatus" class="status-pill"></span>
+        <span id="modalLocation" class="muted mono"></span>
+        <span id="modalDate" class="muted mono"></span>
+      </div>
+
+      <h3 class="modal-subtitle">URLs citadas</h3>
+      <ul id="modalSources" class="modal-sources"></ul>
+
+      <h3 class="modal-subtitle">Resumen de la respuesta</h3>
+      <div id="modalSummary" class="modal-summary"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
